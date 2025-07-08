@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iframe Storage Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            padding: 16px;
+        }
+        
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .header h1 {
+            font-size: 20px;
+            color: #495057;
+            margin-bottom: 5px;
+        }
+        
+        .domain-info {
+            font-size: 12px;
+            color: #6c757d;
+            font-family: monospace;
+            background-color: #f8f9fa;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        
+        .test-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .test-input {
+            flex: 1;
+            padding: 10px 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 14px;
+            background-color: white;
+            color: #495057;
+            min-width: 150px;
+        }
+        
+        .test-input:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+        
+        .test-button {
+            padding: 10px 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            white-space: nowrap;
+            transition: background-color 0.2s;
+        }
+        
+        .test-button:hover {
+            background-color: #0056b3;
+        }
+        
+        .test-button.secondary {
+            background-color: #6c757d;
+        }
+        
+        .test-button.secondary:hover {
+            background-color: #545b62;
+        }
+        
+        .storage-display {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: monospace;
+            border: 1px solid #dee2e6;
+        }
+        
+        .storage-row {
+            margin-bottom: 8px;
+            padding: 4px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .storage-row:last-child {
+            margin-bottom: 0;
+            border-bottom: none;
+        }
+        
+        .storage-label {
+            font-weight: bold;
+            color: #495057;
+            display: inline-block;
+            width: 120px;
+        }
+        
+        .storage-value {
+            color: #007bff;
+        }
+        
+        .status {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            text-align: center;
+        }
+        
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Iframe Storage Test</h1>
+            <div class="domain-info" id="domainInfo">Loading...</div>
+        </div>
+        
+        <div class="test-row">
+            <input type="text" id="testInput" class="test-input" placeholder="Enter test value for iframe">
+            <button onclick="saveData()" class="test-button">Save</button>
+            <button onclick="loadData()" class="test-button secondary">Load</button>
+            <button onclick="clearData()" class="test-button secondary">Clear</button>
+        </div>
+        
+        <div class="storage-display" id="storageDisplay">
+            <div class="storage-row">
+                <span class="storage-label">Cookies:</span>
+                <span class="storage-value" id="cookieValue">-</span>
+            </div>
+            <div class="storage-row">
+                <span class="storage-label">IndexedDB:</span>
+                <span class="storage-value" id="indexedDBValue">-</span>
+            </div>
+            <div class="storage-row">
+                <span class="storage-label">localStorage:</span>
+                <span class="storage-value" id="localStorageValue">-</span>
+            </div>
+            <div class="storage-row">
+                <span class="storage-label">Last saved:</span>
+                <span class="storage-value" id="lastSaved">-</span>
+            </div>
+        </div>
+        
+        <div class="status success" id="status" style="display: none;"></div>
+    </div>
+
+    <script>
+        // Display current domain info
+        document.getElementById('domainInfo').textContent = 
+            `Domain: ${window.location.hostname} | Origin: ${window.location.origin}`;
+        
+        // Storage Management (same as main page but with iframe prefix)
+        let db;
+        const DB_NAME = 'IframeTestStorageDB';
+        const DB_VERSION = 1;
+        const STORE_NAME = 'iframeTestStore';
+        
+        // Initialize IndexedDB
+        function initIndexedDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => {
+                    db = request.result;
+                    resolve(db);
+                };
+                
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+                    }
+                };
+            });
+        }
+        
+        // IndexedDB Operations
+        async function saveToIndexedDB(value) {
+            if (!db) await initIndexedDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([STORE_NAME], 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.put({ id: 'iframeTestValue', value: value, timestamp: Date.now() });
+                
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+        
+        async function loadFromIndexedDB() {
+            if (!db) await initIndexedDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([STORE_NAME], 'readonly');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.get('iframeTestValue');
+                
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+        
+        async function clearIndexedDB() {
+            if (!db) await initIndexedDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([STORE_NAME], 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.clear();
+                
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+        
+        // Cookie Operations
+        function saveToCookie(value) {
+            const expires = new Date();
+            expires.setTime(expires.getTime() + (365 * 24 * 60 * 60 * 1000)); // 1 year
+            document.cookie = `iframeTestValue=${encodeURIComponent(value)}; expires=${expires.toUTCString()}; path=/`;
+            document.cookie = `iframeTestTimestamp=${Date.now()}; expires=${expires.toUTCString()}; path=/`;
+        }
+        
+        function loadFromCookie() {
+            const cookies = document.cookie.split(';');
+            let value = null;
+            let timestamp = null;
+            
+            cookies.forEach(cookie => {
+                const [name, val] = cookie.trim().split('=');
+                if (name === 'iframeTestValue') {
+                    value = decodeURIComponent(val);
+                } else if (name === 'iframeTestTimestamp') {
+                    timestamp = parseInt(val);
+                }
+            });
+            
+            return value ? { value, timestamp } : null;
+        }
+        
+        function clearCookie() {
+            document.cookie = 'iframeTestValue=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+            document.cookie = 'iframeTestTimestamp=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        }
+        
+        // localStorage Operations
+        function saveToLocalStorage(value) {
+            localStorage.setItem('iframeTestValue', value);
+            localStorage.setItem('iframeTestTimestamp', Date.now().toString());
+        }
+        
+        function loadFromLocalStorage() {
+            const value = localStorage.getItem('iframeTestValue');
+            const timestamp = localStorage.getItem('iframeTestTimestamp');
+            return value ? { value, timestamp: parseInt(timestamp) } : null;
+        }
+        
+        function clearLocalStorage() {
+            localStorage.removeItem('iframeTestValue');
+            localStorage.removeItem('iframeTestTimestamp');
+        }
+        
+        // Status display helper
+        function showStatus(message, isError = false) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = isError ? 'status error' : 'status success';
+            status.style.display = 'block';
+            
+            setTimeout(() => {
+                status.style.display = 'none';
+            }, 3000);
+        }
+        
+        // Main Functions
+        async function saveData() {
+            const input = document.getElementById('testInput');
+            const value = input.value.trim();
+            
+            if (!value) {
+                showStatus('Please enter a value to save', true);
+                return;
+            }
+            
+            try {
+                // Save to all storage types
+                await saveToIndexedDB(value);
+                saveToCookie(value);
+                saveToLocalStorage(value);
+                
+                console.log('Iframe data saved to all storage types');
+                showStatus('Data saved successfully to all storage types!');
+                loadData(); // Refresh display
+                input.value = ''; // Clear input
+            } catch (error) {
+                console.error('Error saving iframe data:', error);
+                showStatus('Error saving data: ' + error.message, true);
+            }
+        }
+        
+        async function loadData() {
+            try {
+                // Load from IndexedDB
+                const indexedDBData = await loadFromIndexedDB();
+                document.getElementById('indexedDBValue').textContent = 
+                    indexedDBData ? indexedDBData.value : '-';
+                
+                // Load from Cookie
+                const cookieData = loadFromCookie();
+                document.getElementById('cookieValue').textContent = 
+                    cookieData ? cookieData.value : '-';
+                
+                // Load from localStorage
+                const localStorageData = loadFromLocalStorage();
+                document.getElementById('localStorageValue').textContent = 
+                    localStorageData ? localStorageData.value : '-';
+                
+                // Show last saved timestamp
+                const timestamps = [
+                    indexedDBData?.timestamp,
+                    cookieData?.timestamp,
+                    localStorageData?.timestamp
+                ].filter(Boolean);
+                
+                if (timestamps.length > 0) {
+                    const lastSaved = new Date(Math.max(...timestamps));
+                    document.getElementById('lastSaved').textContent = 
+                        lastSaved.toLocaleString();
+                } else {
+                    document.getElementById('lastSaved').textContent = '-';
+                }
+                
+                console.log('Iframe data loaded from all storage types');
+                
+            } catch (error) {
+                console.error('Error loading iframe data:', error);
+                showStatus('Error loading data: ' + error.message, true);
+            }
+        }
+        
+        async function clearData() {
+            try {
+                await clearIndexedDB();
+                clearCookie();
+                clearLocalStorage();
+                
+                console.log('All iframe data cleared');
+                showStatus('All data cleared successfully!');
+                loadData(); // Refresh display
+            } catch (error) {
+                console.error('Error clearing iframe data:', error);
+                showStatus('Error clearing data: ' + error.message, true);
+            }
+        }
+        
+        // Initialize on page load
+        window.addEventListener('load', async function() {
+            try {
+                await initIndexedDB();
+                loadData(); // Load and display existing data
+                console.log('Iframe storage test initialized');
+            } catch (error) {
+                console.error('Error initializing iframe storage test:', error);
+                showStatus('Error initializing storage test: ' + error.message, true);
+            }
+        });
+        
+        // Send messages to parent window about storage changes
+        window.addEventListener('storage', function(e) {
+            console.log('Storage event in iframe:', e);
+            if (window.parent) {
+                window.parent.postMessage({
+                    type: 'iframe-storage-change',
+                    key: e.key,
+                    newValue: e.newValue,
+                    oldValue: e.oldValue
+                }, '*');
+            }
+        });
+    </script>
+</body>
+</html>

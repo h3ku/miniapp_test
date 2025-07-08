@@ -99,6 +99,28 @@
             margin-bottom: 0;
         }
         
+        .iframe-test-container {
+            margin-top: 20px;
+            border: 2px solid var(--tg-theme-hint-color, #ccc);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .iframe-test-header {
+            background-color: var(--tg-theme-secondary-bg-color, #f5f5f5);
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--tg-theme-hint-color, #ccc);
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .iframe-test-frame {
+            width: 100%;
+            height: 400px;
+            border: none;
+            display: block;
+        }
+        
         .header h1 {
             font-size: 18px;
             font-weight: 600;
@@ -180,6 +202,19 @@
                 <div class="storage-row">IndexedDB: <span id="indexedDBValue">-</span></div>
                 <div class="storage-row">localStorage: <span id="localStorageValue">-</span></div>
                 <div class="storage-row">Last saved: <span id="lastSaved">-</span></div>
+            </div>
+            
+            <div class="iframe-test-container">
+                <div class="iframe-test-header">
+                    Iframe Storage Test (Different Domain/Origin)
+                </div>
+                <iframe 
+                    id="iframe-test" 
+                    class="iframe-test-frame" 
+                    src="https://h3ku.github.io/miniapp_test/iframe-test.html"
+                    sandbox="allow-same-origin allow-scripts allow-forms"
+                    loading="lazy">
+                </iframe>
             </div>
         </div>
         
@@ -471,6 +506,16 @@
                 error.style.display = 'block';
             }
         }, 15000); // 15 seconds timeout
+        
+        // Handle messages from iframe
+        window.addEventListener('message', function(event) {
+            // Only accept messages from the iframe test page
+            if (event.origin !== 'https://h3ku.github.io') return;
+            
+            if (event.data.type === 'iframe-storage-change') {
+                console.log('Iframe storage change:', event.data);
+            }
+        });
         
         // Initialize on page load
         window.addEventListener('load', async function() {
