@@ -36,6 +36,69 @@
             min-height: 50px;
         }
         
+        .test-section {
+            padding: 16px;
+            background-color: var(--tg-theme-bg-color, #ffffff);
+            border-bottom: 1px solid var(--tg-theme-hint-color, #ccc);
+        }
+        
+        .test-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .test-input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid var(--tg-theme-hint-color, #ccc);
+            border-radius: 6px;
+            font-size: 14px;
+            background-color: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+            min-width: 150px;
+        }
+        
+        .test-button {
+            padding: 8px 16px;
+            background-color: var(--tg-theme-button-color, #007aff);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+        
+        .test-button:hover {
+            opacity: 0.8;
+        }
+        
+        .test-button.secondary {
+            background-color: var(--tg-theme-secondary-bg-color, #f5f5f5);
+            color: var(--tg-theme-text-color, #000000);
+            border: 1px solid var(--tg-theme-hint-color, #ccc);
+        }
+        
+        .storage-display {
+            margin-top: 12px;
+            padding: 12px;
+            background-color: var(--tg-theme-secondary-bg-color, #f5f5f5);
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: monospace;
+        }
+        
+        .storage-row {
+            margin-bottom: 6px;
+        }
+        
+        .storage-row:last-child {
+            margin-bottom: 0;
+        }
+        
         .header h1 {
             font-size: 18px;
             font-weight: 600;
@@ -45,6 +108,11 @@
             flex: 1;
             position: relative;
             overflow: hidden;
+            display: none;
+        }
+        
+        .iframe-container.visible {
+            display: block;
         }
         
         .moonpay-iframe {
@@ -92,10 +160,30 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>MoonPay</h1>
+            <h1>MoonPay Storage Test</h1>
         </div>
         
-        <div class="iframe-container">
+        <div class="test-section">
+            <div class="test-row">
+                <input type="text" id="testInput" class="test-input" placeholder="Enter test value">
+                <button onclick="saveData()" class="test-button">Save</button>
+                <button onclick="loadData()" class="test-button secondary">Load</button>
+                <button onclick="clearData()" class="test-button secondary">Clear</button>
+            </div>
+            
+            <div class="test-row">
+                <button onclick="toggleIframe()" class="test-button secondary" id="toggleButton">Show MoonPay</button>
+            </div>
+            
+            <div class="storage-display" id="storageDisplay">
+                <div class="storage-row">Cookies: <span id="cookieValue">-</span></div>
+                <div class="storage-row">IndexedDB: <span id="indexedDBValue">-</span></div>
+                <div class="storage-row">localStorage: <span id="localStorageValue">-</span></div>
+                <div class="storage-row">Last saved: <span id="lastSaved">-</span></div>
+            </div>
+        </div>
+        
+        <div class="iframe-container" id="iframeContainer">
             <div class="loading" id="loading">Loading MoonPay...</div>
             <div class="error" id="error" style="display: none;">
                 <div>Failed to load MoonPay</div>
@@ -134,6 +222,206 @@
             document.documentElement.style.setProperty('--tg-viewport-height', eventData.height + 'px');
             document.documentElement.style.setProperty('--tg-viewport-stable-height', eventData.stableHeight + 'px');
         });
+        
+        // Storage Management
+        let db;
+        const DB_NAME = 'TestStorageDB';
+        const DB_VERSION = 1;
+        const STORE_NAME = 'testStore';
+        
+        // Initialize IndexedDB
+        function initIndexedDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => {
+                    db = request.result;
+                    resolve(db);
+                };
+                
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+                    }
+                };
+            });
+        }
+        
+        // IndexedDB Operations
+        async function saveToIndexedDB(value) {
+            if (!db) await initIndexedDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([STORE_NAME], 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.put({ id: 'testValue', value: value, timestamp: Date.now() });
+                
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+        
+        async function loadFromIndexedDB() {
+            if (!db) await initIndexedDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([STORE_NAME], 'readonly');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.get('testValue');
+                
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+        
+        async function clearIndexedDB() {
+            if (!db) await initIndexedDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([STORE_NAME], 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.clear();
+                
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+        
+        // Cookie Operations
+        function saveToCookie(value) {
+            const expires = new Date();
+            expires.setTime(expires.getTime() + (365 * 24 * 60 * 60 * 1000)); // 1 year
+            document.cookie = `testValue=${encodeURIComponent(value)}; expires=${expires.toUTCString()}; path=/`;
+            document.cookie = `testTimestamp=${Date.now()}; expires=${expires.toUTCString()}; path=/`;
+        }
+        
+        function loadFromCookie() {
+            const cookies = document.cookie.split(';');
+            let value = null;
+            let timestamp = null;
+            
+            cookies.forEach(cookie => {
+                const [name, val] = cookie.trim().split('=');
+                if (name === 'testValue') {
+                    value = decodeURIComponent(val);
+                } else if (name === 'testTimestamp') {
+                    timestamp = parseInt(val);
+                }
+            });
+            
+            return value ? { value, timestamp } : null;
+        }
+        
+        function clearCookie() {
+            document.cookie = 'testValue=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+            document.cookie = 'testTimestamp=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        }
+        
+        // localStorage Operations
+        function saveToLocalStorage(value) {
+            localStorage.setItem('testValue', value);
+            localStorage.setItem('testTimestamp', Date.now().toString());
+        }
+        
+        function loadFromLocalStorage() {
+            const value = localStorage.getItem('testValue');
+            const timestamp = localStorage.getItem('testTimestamp');
+            return value ? { value, timestamp: parseInt(timestamp) } : null;
+        }
+        
+        function clearLocalStorage() {
+            localStorage.removeItem('testValue');
+            localStorage.removeItem('testTimestamp');
+        }
+        
+        // Main Functions
+        async function saveData() {
+            const input = document.getElementById('testInput');
+            const value = input.value.trim();
+            
+            if (!value) {
+                alert('Please enter a value to save');
+                return;
+            }
+            
+            try {
+                // Save to all storage types
+                await saveToIndexedDB(value);
+                saveToCookie(value);
+                saveToLocalStorage(value);
+                
+                console.log('Data saved to all storage types');
+                loadData(); // Refresh display
+                input.value = ''; // Clear input
+            } catch (error) {
+                console.error('Error saving data:', error);
+                alert('Error saving data: ' + error.message);
+            }
+        }
+        
+        async function loadData() {
+            try {
+                // Load from IndexedDB
+                const indexedDBData = await loadFromIndexedDB();
+                document.getElementById('indexedDBValue').textContent = 
+                    indexedDBData ? indexedDBData.value : '-';
+                
+                // Load from Cookie
+                const cookieData = loadFromCookie();
+                document.getElementById('cookieValue').textContent = 
+                    cookieData ? cookieData.value : '-';
+                
+                // Load from localStorage
+                const localStorageData = loadFromLocalStorage();
+                document.getElementById('localStorageValue').textContent = 
+                    localStorageData ? localStorageData.value : '-';
+                
+                // Show last saved timestamp
+                const timestamps = [
+                    indexedDBData?.timestamp,
+                    cookieData?.timestamp,
+                    localStorageData?.timestamp
+                ].filter(Boolean);
+                
+                if (timestamps.length > 0) {
+                    const lastSaved = new Date(Math.max(...timestamps));
+                    document.getElementById('lastSaved').textContent = 
+                        lastSaved.toLocaleString();
+                } else {
+                    document.getElementById('lastSaved').textContent = '-';
+                }
+                
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
+        }
+        
+        async function clearData() {
+            try {
+                await clearIndexedDB();
+                clearCookie();
+                clearLocalStorage();
+                
+                console.log('All data cleared');
+                loadData(); // Refresh display
+            } catch (error) {
+                console.error('Error clearing data:', error);
+                alert('Error clearing data: ' + error.message);
+            }
+        }
+        
+        // Toggle iframe visibility
+        function toggleIframe() {
+            const container = document.getElementById('iframeContainer');
+            const button = document.getElementById('toggleButton');
+            
+            if (container.classList.contains('visible')) {
+                container.classList.remove('visible');
+                button.textContent = 'Show MoonPay';
+            } else {
+                container.classList.add('visible');
+                button.textContent = 'Hide MoonPay';
+            }
+        }
         
         // Handle iframe loading
         const iframe = document.getElementById('moonpay-iframe');
@@ -183,6 +471,16 @@
                 error.style.display = 'block';
             }
         }, 15000); // 15 seconds timeout
+        
+        // Initialize on page load
+        window.addEventListener('load', async function() {
+            try {
+                await initIndexedDB();
+                loadData(); // Load and display existing data
+            } catch (error) {
+                console.error('Error initializing app:', error);
+            }
+        });
     </script>
 </body>
 </html>
