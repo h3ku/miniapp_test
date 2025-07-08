@@ -16,12 +16,13 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background-color: var(--tg-theme-bg-color, #ffffff);
             color: var(--tg-theme-text-color, #000000);
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: auto;
         }
         
         .container {
             width: 100vw;
-            height: 100vh;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
         }
@@ -104,6 +105,11 @@
             border: 2px solid var(--tg-theme-hint-color, #ccc);
             border-radius: 8px;
             overflow: hidden;
+            display: none;
+        }
+        
+        .iframe-test-container.visible {
+            display: block;
         }
         
         .iframe-test-header {
@@ -116,7 +122,7 @@
         
         .iframe-test-frame {
             width: 100%;
-            height: 400px;
+            height: 50vh;
             border: none;
             display: block;
         }
@@ -127,7 +133,7 @@
         }
         
         .iframe-container {
-            flex: 1;
+            height: 50vh;
             position: relative;
             overflow: hidden;
             display: none;
@@ -195,6 +201,7 @@
             
             <div class="test-row">
                 <button onclick="toggleIframe()" class="test-button secondary" id="toggleButton">Show MoonPay</button>
+                <button onclick="toggleIframeTest()" class="test-button secondary" id="toggleIframeTestButton">Show Storage Test</button>
             </div>
             
             <div class="storage-display" id="storageDisplay">
@@ -204,7 +211,7 @@
                 <div class="storage-row">Last saved: <span id="lastSaved">-</span></div>
             </div>
             
-            <div class="iframe-test-container">
+            <div class="iframe-test-container" id="iframeTestContainer">
                 <div class="iframe-test-header">
                     Iframe Storage Test (Different Domain/Origin)
                 </div>
@@ -455,6 +462,20 @@
             } else {
                 container.classList.add('visible');
                 button.textContent = 'Hide MoonPay';
+            }
+        }
+        
+        // Toggle iframe test visibility
+        function toggleIframeTest() {
+            const container = document.getElementById('iframeTestContainer');
+            const button = document.getElementById('toggleIframeTestButton');
+            
+            if (container.classList.contains('visible')) {
+                container.classList.remove('visible');
+                button.textContent = 'Show Storage Test';
+            } else {
+                container.classList.add('visible');
+                button.textContent = 'Hide Storage Test';
             }
         }
         
