@@ -517,6 +517,11 @@
             }
         });
         
+        // Handle iframe load errors
+        document.getElementById('iframe-test').addEventListener('error', function() {
+            console.error('Failed to load iframe test page');
+        });
+        
         // Initialize on page load
         window.addEventListener('load', async function() {
             try {
