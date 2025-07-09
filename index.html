@@ -202,6 +202,7 @@
             <div class="test-row">
                 <button onclick="toggleIframe()" class="test-button secondary" id="toggleButton">Show MoonPay</button>
                 <button onclick="toggleIframeTest()" class="test-button secondary" id="toggleIframeTestButton">Show Storage Test</button>
+                <button onclick="openInNewWindow()" class="test-button" id="openNewWindowButton">Open in New Window</button>
             </div>
             
             <div class="storage-display" id="storageDisplay">
@@ -542,6 +543,21 @@
         document.getElementById('iframe-test').addEventListener('error', function() {
             console.error('Failed to load iframe test page');
         });
+        
+        // Open widget in new window
+        function openInNewWindow() {
+            const currentUrl = window.location.href;
+            const widgetUrl = `https://miniapp-test-d5p.pages.dev/iframe-test?return_url=${encodeURIComponent(currentUrl)}`;
+            
+            // Try different methods based on Telegram WebApp availability
+            if (window.Telegram && window.Telegram.WebApp) {
+                // Telegram Mini App - use openLink to open in external browser
+                window.Telegram.WebApp.openLink(widgetUrl);
+            } else {
+                // Fallback for regular browsers
+                window.open(widgetUrl, '_blank');
+            }
+        }
         
         // Initialize on page load
         window.addEventListener('load', async function() {
