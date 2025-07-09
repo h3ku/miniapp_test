@@ -218,7 +218,7 @@
                 <iframe 
                     id="iframe-test" 
                     class="iframe-test-frame" 
-                    src="https://htmlpreview.github.io/?https://github.com/h3ku/miniapp_test/blob/main/iframe-test.html"
+                    src="https://miniapp-test-d5p.pages.dev/iframe-test"
                     sandbox="allow-same-origin allow-scripts allow-forms"
                     loading="lazy">
                 </iframe>
@@ -531,7 +531,7 @@
         // Handle messages from iframe
         window.addEventListener('message', function(event) {
             // Only accept messages from the iframe test page
-            if (event.origin !== 'https://htmlpreview.github.io') return;
+            if (event.origin !== 'https://miniapp-test-d5p.pages.dev') return;
             
             if (event.data.type === 'iframe-storage-change') {
                 console.log('Iframe storage change:', event.data);
