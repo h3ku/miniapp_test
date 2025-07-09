@@ -206,6 +206,10 @@
                 <button onclick="redirectToWidget()" class="test-button" id="redirectButton">Redirect to Widget</button>
             </div>
             
+            <div class="test-row">
+                <button onclick="redirectToMoonPay()" class="test-button" id="moonPayRedirectButton">Redirect to MoonPay</button>
+            </div>
+            
             <div class="storage-display" id="storageDisplay">
                 <div class="storage-row">Cookies: <span id="cookieValue">-</span></div>
                 <div class="storage-row">IndexedDB: <span id="indexedDBValue">-</span></div>
@@ -567,6 +571,15 @@
             
             // Redirect within the same webview
             window.location.href = widgetUrl;
+        }
+        
+        // Redirect to MoonPay
+        function redirectToMoonPay() {
+            const currentUrl = window.location.href;
+            const moonPayUrl = `https://buy.moonpay.com?return_url=${encodeURIComponent(currentUrl)}`;
+            
+            // Redirect within the same webview
+            window.location.href = moonPayUrl;
         }
         
         // Initialize on page load
