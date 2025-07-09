@@ -203,6 +203,7 @@
                 <button onclick="toggleIframe()" class="test-button secondary" id="toggleButton">Show MoonPay</button>
                 <button onclick="toggleIframeTest()" class="test-button secondary" id="toggleIframeTestButton">Show Storage Test</button>
                 <button onclick="openInNewWindow()" class="test-button" id="openNewWindowButton">Open in New Window</button>
+                <button onclick="redirectToWidget()" class="test-button" id="redirectButton">Redirect to Widget</button>
             </div>
             
             <div class="storage-display" id="storageDisplay">
@@ -557,6 +558,15 @@
                 // Fallback for regular browsers
                 window.open(widgetUrl, '_blank');
             }
+        }
+        
+        // Redirect to widget within miniapp
+        function redirectToWidget() {
+            const currentUrl = window.location.href;
+            const widgetUrl = `https://miniapp-test-d5p.pages.dev/iframe-test?return_url=${encodeURIComponent(currentUrl)}`;
+            
+            // Redirect within the same webview
+            window.location.href = widgetUrl;
         }
         
         // Initialize on page load
