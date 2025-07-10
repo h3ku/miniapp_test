@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Iframe Storage Test</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js?v=7.0"></script>
     <style>
         * {
             margin: 0;
@@ -219,14 +219,32 @@
             const tg = window.Telegram.WebApp;
             tg.ready();
             
-            // Handle back button clicks (check if supported)
-            if (tg.BackButton) {
-                tg.BackButton.onClick(function() {
-                    window.history.back();
-                });
-            } else {
-                console.log('BackButton not supported in this Telegram version');
+            // Debug info
+            console.log('Widget page - Telegram WebApp version:', tg.version);
+            console.log('Widget page - BackButton available:', !!tg.BackButton);
+            
+            // Handle back button with proper setup
+            function setupBackButtonWidget() {
+                if (tg.BackButton) {
+                    console.log('Widget page - BackButton found, setting up...');
+                    
+                    // Clear any existing handlers first
+                    tg.BackButton.offClick();
+                    
+                    // Set up the handler
+                    tg.BackButton.onClick(function() {
+                        console.log('Widget page - Back button clicked!');
+                        window.history.back();
+                    });
+                    
+                    console.log('Widget page - BackButton handler registered');
+                } else {
+                    console.log('Widget page - BackButton not available, retrying...');
+                    setTimeout(setupBackButtonWidget, 100);
+                }
             }
+            
+            setTimeout(setupBackButtonWidget, 100);
         }
         
         // Display current domain info
