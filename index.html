@@ -183,10 +183,22 @@
         .error button:hover {
             opacity: 0.8;
         }
+        
+        .url-banner {
+            background-color: var(--tg-theme-secondary-bg-color, #f0f0f0);
+            padding: 8px 16px;
+            font-family: monospace;
+            font-size: 11px;
+            color: var(--tg-theme-hint-color, #666);
+            word-break: break-all;
+            border-bottom: 1px solid var(--tg-theme-hint-color, #ccc);
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <div class="url-banner" id="urlBanner">Loading URL...</div>
+        
         <div class="header">
             <h1>MoonPay Storage Test</h1>
         </div>
@@ -214,6 +226,7 @@
                 <div class="storage-row">Cookies: <span id="cookieValue">-</span></div>
                 <div class="storage-row">IndexedDB: <span id="indexedDBValue">-</span></div>
                 <div class="storage-row">localStorage: <span id="localStorageValue">-</span></div>
+                <div class="storage-row">sessionStorage: <span id="sessionStorageValue">-</span></div>
                 <div class="storage-row">Last saved: <span id="lastSaved">-</span></div>
             </div>
             
@@ -381,6 +394,23 @@
             localStorage.removeItem('testTimestamp');
         }
         
+        // sessionStorage Operations
+        function saveToSessionStorage(value) {
+            sessionStorage.setItem('testValue', value);
+            sessionStorage.setItem('testTimestamp', Date.now().toString());
+        }
+        
+        function loadFromSessionStorage() {
+            const value = sessionStorage.getItem('testValue');
+            const timestamp = sessionStorage.getItem('testTimestamp');
+            return value ? { value, timestamp: parseInt(timestamp) } : null;
+        }
+        
+        function clearSessionStorage() {
+            sessionStorage.removeItem('testValue');
+            sessionStorage.removeItem('testTimestamp');
+        }
+        
         // Main Functions
         async function saveData() {
             const input = document.getElementById('testInput');
@@ -396,6 +426,7 @@
                 await saveToIndexedDB(value);
                 saveToCookie(value);
                 saveToLocalStorage(value);
+                saveToSessionStorage(value);
                 
                 console.log('Data saved to all storage types');
                 loadData(); // Refresh display
@@ -423,11 +454,17 @@
                 document.getElementById('localStorageValue').textContent = 
                     localStorageData ? localStorageData.value : '-';
                 
+                // Load from sessionStorage
+                const sessionStorageData = loadFromSessionStorage();
+                document.getElementById('sessionStorageValue').textContent = 
+                    sessionStorageData ? sessionStorageData.value : '-';
+                
                 // Show last saved timestamp
                 const timestamps = [
                     indexedDBData?.timestamp,
                     cookieData?.timestamp,
-                    localStorageData?.timestamp
+                    localStorageData?.timestamp,
+                    sessionStorageData?.timestamp
                 ].filter(Boolean);
                 
                 if (timestamps.length > 0) {
@@ -448,6 +485,7 @@
                 await clearIndexedDB();
                 clearCookie();
                 clearLocalStorage();
+                clearSessionStorage();
                 
                 console.log('All data cleared');
                 loadData(); // Refresh display
@@ -585,6 +623,9 @@
         // Initialize on page load
         window.addEventListener('load', async function() {
             try {
+                // Update URL banner
+                document.getElementById('urlBanner').textContent = window.location.href;
+                
                 await initIndexedDB();
                 loadData(); // Load and display existing data
             } catch (error) {
