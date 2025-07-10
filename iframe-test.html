@@ -223,21 +223,33 @@
             console.log('Widget page - Telegram WebApp version:', tg.version);
             console.log('Widget page - BackButton available:', !!tg.BackButton);
             
-            // Handle back button with proper setup
+            // Handle back button with version bypass
             function setupBackButtonWidget() {
                 if (tg.BackButton) {
                     console.log('Widget page - BackButton found, setting up...');
                     
-                    // Clear any existing handlers first
-                    tg.BackButton.offClick();
-                    
-                    // Set up the handler
-                    tg.BackButton.onClick(function() {
-                        console.log('Widget page - Back button clicked!');
-                        window.history.back();
-                    });
-                    
-                    console.log('Widget page - BackButton handler registered');
+                    // Skip version check and directly register handler
+                    try {
+                        // Direct event listener without version check
+                        tg.onEvent('backButtonClicked', function() {
+                            console.log('Widget page - Back button clicked via event!');
+                            window.history.back();
+                        });
+                        
+                        console.log('Widget page - BackButton event handler registered');
+                    } catch (error) {
+                        console.log('Widget page - Event handler failed, trying fallback:', error);
+                        
+                        // Fallback: try standard method anyway
+                        try {
+                            tg.BackButton.onClick(function() {
+                                console.log('Widget page - Back button clicked via onClick!');
+                                window.history.back();
+                            });
+                        } catch (e) {
+                            console.log('Widget page - All methods failed:', e);
+                        }
+                    }
                 } else {
                     console.log('Widget page - BackButton not available, retrying...');
                     setTimeout(setupBackButtonWidget, 100);
