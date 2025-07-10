@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MoonPay Telegram Mini App</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js?v=7.0"></script>
     <style>
         * {
             margin: 0;
@@ -547,11 +547,35 @@
             iframe.src = iframe.src;
         }
         
-        // Handle back button
-        tg.BackButton.show();
-        tg.BackButton.onClick(function() {
-            tg.close();
-        });
+        // Debug Telegram WebApp info
+        console.log('Telegram WebApp version:', tg.version);
+        console.log('BackButton available:', !!tg.BackButton);
+        console.log('Available properties:', Object.keys(tg));
+        
+        // Handle back button with retry logic
+        function setupBackButton() {
+            if (tg.BackButton) {
+                console.log('BackButton found, setting up...');
+                
+                // Clear any existing handlers first
+                tg.BackButton.offClick();
+                
+                // Set up the handler
+                tg.BackButton.onClick(function() {
+                    console.log('Back button clicked!');
+                    tg.close();
+                });
+                
+                // Show the button
+                tg.BackButton.show();
+                console.log('BackButton setup complete');
+            } else {
+                console.log('BackButton not available, retrying in 100ms...');
+                setTimeout(setupBackButton, 100);
+            }
+        }
+        
+        setTimeout(setupBackButton, 100); // Small delay to ensure tg is fully loaded
         
         // Optional: Handle main button if needed
         // tg.MainButton.setText('Close');

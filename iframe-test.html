@@ -219,10 +219,14 @@
             const tg = window.Telegram.WebApp;
             tg.ready();
             
-            // Handle back button clicks
-            tg.BackButton.onClick(function() {
-                window.history.back();
-            });
+            // Handle back button clicks (check if supported)
+            if (tg.BackButton) {
+                tg.BackButton.onClick(function() {
+                    window.history.back();
+                });
+            } else {
+                console.log('BackButton not supported in this Telegram version');
+            }
         }
         
         // Display current domain info
