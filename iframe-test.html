@@ -181,6 +181,7 @@
         
         <div class="test-row" id="returnButtonRow" style="display: none;">
             <button onclick="returnToMiniApp()" class="test-button">Return to Mini App</button>
+            <a href="#" id="returnLinkButton" class="test-button" style="display: inline-block; text-decoration: none; text-align: center; margin-left: 8px;">Return via Link</a>
         </div>
         
         <div id="returnUrlDisplay" style="display: none; padding: 8px 16px; background-color: #f8f9fa; border-radius: 4px; margin-bottom: 16px; font-family: monospace; font-size: 11px; color: #666; word-break: break-all;">
@@ -530,6 +531,7 @@
                     document.getElementById('returnButtonRow').style.display = 'block';
                     document.getElementById('returnUrlDisplay').style.display = 'block';
                     document.getElementById('returnUrlText').textContent = decodeURIComponent(returnUrl);
+                    document.getElementById('returnLinkButton').href = decodeURIComponent(returnUrl);
                     console.log('Return URL found:', returnUrl);
                 }
             } catch (error) {
