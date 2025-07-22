@@ -639,7 +639,7 @@
         // Redirect to MoonPay
         function redirectToMoonPay() {
             const currentUrl = window.location.href;
-            const moonPayUrl = `https://sell.moonpay.com?return_url=${encodeURIComponent(currentUrl)}&apiKey=pk_live_3EpRDRf5KEsKyzj5e3kLXEt3ll9oR9J`;
+            const moonPayUrl = `https://sell.moonpay.com`;
             
             // Redirect within the same webview
             window.location.href = moonPayUrl;
